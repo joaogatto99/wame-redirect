@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirecionando...</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f5f5f5;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .loader {
+      text-align: center;
+      color: #555;
+    }
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid #e0e0e0;
+      border-top-color: #25D366;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    p { font-size: 14px; color: #888; }
+  </style>
+</head>
+<body>
+  <div class="loader">
+    <div class="spinner"></div>
+    <p>Redirecionando...</p>
+  </div>
+
+  <script>
+    // ================================================
+    // CONFIGURAÇÕES — edite apenas esta seção
+    // ================================================
+    var WHATSAPP_NUMBER = "5521996546586";
+    var WHATSAPP_MESSAGE = "Olá! Tenho interesse e gostaria de mais informações.";
+    var HUBSPOT_PORTAL_ID = "SEU_PORTAL_ID";      // ex: 12345678
+    var HUBSPOT_FORM_ID = "SEU_FORM_ID";          // GUID do formulário HubSpot
+    // ================================================
+
+    function getParams() {
+      var params = {};
+      var search = window.location.search.substring(1);
+      if (!search) return params;
+      search.split("&").forEach(function(pair) {
+        var parts = pair.split("=");
+        if (parts.length === 2) {
+          params[decodeURIComponent(parts[0])] = decodeURIComponent(parts[1].replace(/\+/g, " "));
+        }
+      });
+      return params;
+    }
+
+    function buildWhatsAppUrl(campaign) {
+      var msg = WHATSAPP_MESSAGE;
+      if (campaign) msg += " CAMP:" + campaign;
+      return "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(msg);
+    }
+
+    function sendToHubSpot(data) {
+      if (HUBSPOT_PORTAL_ID === "SEU_PORTAL_ID") return; // skip se não configurado
+      var payload = {
+        fields: [
+          { name: "utm_source",   value: data.utm_source   || "whatsapp" },
+          { name: "utm_medium",   value: data.utm_medium   || "cpc" },
+          { name: "utm_campaign", value: data.utm_campaign || "" },
+          { name: "utm_content",  value: data.utm_content  || "" },
+          { name: "utm_term",     value: data.utm_term     || "" },
+          { name: "fbclid",       value: data.fbclid       || "" }
+        ],
+        context: { pageUri: window.location.href, pageName: "Redirect Page" }
+      };
+      fetch(
+        "https://api.hsforms.com/submissions/v3/integration/submit/" +
+        HUBSPOT_PORTAL_ID + "/" + HUBSPOT_FORM_ID,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        }
+      ).catch(function() {}); // silencioso — não bloqueia o redirect
+    }
+
+    function run() {
+      var p = getParams();
+
+      // Salva no sessionStorage para persistência
+      var tracked = {
+        fbclid:       p.fbclid       || "",
+        utm_source:   p.utm_source   || "whatsapp",
+        utm_medium:   p.utm_medium   || "cpc",
+        utm_campaign: p.utm_campaign || "",
+        utm_content:  p.utm_content  || "",
+        utm_term:     p.utm_term     || ""
+      };
+
+      // Envia para HubSpot (se configurado)
+      sendToHubSpot(tracked);
+
+      // Monta URL do WhatsApp com código de campanha no texto
+      var waUrl = buildWhatsAppUrl(tracked.utm_campaign);
+
+      // Redireciona após 300ms (tempo para o fetch disparar)
+      setTimeout(function() {
+        window.location.href = waUrl;
+      }, 300);
+    }
+
+    run();
+  </script>
+</body>
+</html>

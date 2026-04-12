@@ -36,17 +36,16 @@
     <div class="spinner"></div>
     <p>Redirecionando...</p>
   </div>
-
+ 
   <script>
     // ================================================
     // CONFIGURAÇÕES — edite apenas esta seção
     // ================================================
-    var WHATSAPP_NUMBER = "5521996546586";
+    var WHATSAPP_NUMBER  = "5521996546586";
     var WHATSAPP_MESSAGE = "Olá! Tenho interesse e gostaria de mais informações.";
-    var HUBSPOT_PORTAL_ID = "51146905";      // ex: 12345678
-    var HUBSPOT_FORM_ID = "2KQt0Vnq9SaiyotjymoXjMwug97d";          // GUID do formulário HubSpot
+    var MAKE_WEBHOOK_URL = "https://hook.us2.make.com/tnx84fadldraj31eta81qohc9u9kijde";
     // ================================================
-
+ 
     function getParams() {
       var params = {};
       var search = window.location.search.substring(1);
@@ -59,62 +58,43 @@
       });
       return params;
     }
-
+ 
     function buildWhatsAppUrl(campaign) {
       var msg = WHATSAPP_MESSAGE;
       if (campaign) msg += " CAMP:" + campaign;
       return "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(msg);
     }
-
-    function sendToHubSpot(data) {
-      if (HUBSPOT_PORTAL_ID === "SEU_PORTAL_ID") return; // skip se não configurado
-      var payload = {
-        fields: [
-          { name: "utm_source",   value: data.utm_source   || "whatsapp" },
-          { name: "utm_medium",   value: data.utm_medium   || "cpc" },
-          { name: "utm_campaign", value: data.utm_campaign || "" },
-          { name: "utm_content",  value: data.utm_content  || "" },
-          { name: "utm_term",     value: data.utm_term     || "" },
-          { name: "fbclid",       value: data.fbclid       || "" }
-        ],
-        context: { pageUri: window.location.href, pageName: "Redirect Page" }
-      };
-      fetch(
-        "https://api.hsforms.com/submissions/v3/integration/submit/" +
-        HUBSPOT_PORTAL_ID + "/" + HUBSPOT_FORM_ID,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        }
-      ).catch(function() {}); // silencioso — não bloqueia o redirect
+ 
+    function sendToMake(data) {
+      fetch(MAKE_WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      }).catch(function() {});
     }
-
+ 
     function run() {
       var p = getParams();
-
-      // Salva no sessionStorage para persistência
+ 
       var tracked = {
         fbclid:       p.fbclid       || "",
-        utm_source:   p.utm_source   || "whatsapp",
+        utm_source:   p.utm_source   || "meta",
         utm_medium:   p.utm_medium   || "cpc",
         utm_campaign: p.utm_campaign || "",
         utm_content:  p.utm_content  || "",
-        utm_term:     p.utm_term     || ""
+        utm_term:     p.utm_term     || "",
+        page_url:     window.location.href
       };
-
-      // Envia para HubSpot (se configurado)
-      sendToHubSpot(tracked);
-
-      // Monta URL do WhatsApp com código de campanha no texto
+ 
+      sendToMake(tracked);
+ 
       var waUrl = buildWhatsAppUrl(tracked.utm_campaign);
-
-      // Redireciona após 300ms (tempo para o fetch disparar)
+ 
       setTimeout(function() {
         window.location.href = waUrl;
-      }, 300);
+      }, 500);
     }
-
+ 
     run();
   </script>
 </body>

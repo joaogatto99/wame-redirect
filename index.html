@@ -36,7 +36,7 @@
     <div class="spinner"></div>
     <p>Redirecionando...</p>
   </div>
- 
+
   <script>
     // ================================================
     // CONFIGURAÇÕES — edite apenas esta seção
@@ -45,7 +45,7 @@
     var WHATSAPP_MESSAGE = "Olá! Tenho interesse e gostaria de mais informações.";
     var MAKE_WEBHOOK_URL = "https://hook.us2.make.com/tnx84fadldraj31eta81qohc9u9kijde";
     // ================================================
- 
+
     function getParams() {
       var params = {};
       var search = window.location.search.substring(1);
@@ -58,13 +58,12 @@
       });
       return params;
     }
- 
-    function buildWhatsAppUrl(campaign) {
+
+    function buildWhatsAppUrl() {
       var msg = WHATSAPP_MESSAGE;
-      if (campaign) msg += " CAMP:" + campaign;
       return "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(msg);
     }
- 
+
     function sendToMake(data) {
       fetch(MAKE_WEBHOOK_URL, {
         method: "POST",
@@ -72,10 +71,10 @@
         body: JSON.stringify(data)
       }).catch(function() {});
     }
- 
+
     function run() {
       var p = getParams();
- 
+
       var tracked = {
         fbclid:       p.fbclid       || "",
         utm_source:   p.utm_source   || "meta",
@@ -85,16 +84,16 @@
         utm_term:     p.utm_term     || "",
         page_url:     window.location.href
       };
- 
+
       sendToMake(tracked);
- 
-      var waUrl = buildWhatsAppUrl(tracked.utm_campaign);
- 
+
+      var waUrl = buildWhatsAppUrl();
+
       setTimeout(function() {
         window.location.href = waUrl;
       }, 500);
     }
- 
+
     run();
   </script>
 </body>
